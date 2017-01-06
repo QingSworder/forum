@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kaishengit.mapper.CommentMapper">
+    <insert id="addTopicReply">
+        insert into t_comment(topicId,content,userId) values(#{topicId},#{content},#{userId})
+    </insert>
+    <select id="findAllCommentsById" resultType="com.kaishengit.entity.Comment">
+        select tu.id,tu.avatar,tu.userName,tc.* FROM t_user tu,t_comment tc WHERE tu.id = tc.userId AND tc.topicId = #{topicId}
+    </select>
+</mapper>

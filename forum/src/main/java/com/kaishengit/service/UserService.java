@@ -6,14 +6,13 @@ import com.kaishengit.dao.NotifyDao;
 import com.kaishengit.entity.LoginLog;
 import com.kaishengit.entity.Notify;
 import com.kaishengit.exception.ServiceException;
-import com.kaishengit.util.Config;
+import com.kaishengit.mapper.*;
+import com.kaishengit.util.*;
 import com.kaishengit.dao.UserDao;
 import com.kaishengit.entity.User;
-import com.kaishengit.util.EmailUtil;
-import com.kaishengit.util.Page;
-import com.kaishengit.util.StringUtils;
 import com.kaishengit.vo.UserVo;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,8 +25,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class UserService {
     private Logger logger = LoggerFactory.getLogger(UserService.class);
-    private UserDao userDao = new UserDao();
-    private NotifyDao notifyDao = new NotifyDao();
+
+    private UserMapper userMapper = SqlSessionFactoryUtil.getSqlSession().getMapper(UserMapper.class);
+
+    private NotifyMapper notifyMapper = SqlSessionFactoryUtil.getSqlSession().getMapper(NotifyMapper.class);
+
 
     //发送激活邮件的TOKEN缓存
     private static Cache<String,String> cache = CacheBuilder.newBuilder()
@@ -51,7 +53,7 @@ public class UserService {
         if(nameList.contains(userName)){
             return false;
         }
-        return userDao.findByUserName(userName) == null;
+        return userMapper.findByUserName(userName) == null;
     }
 
     /**
@@ -70,7 +72,7 @@ public class UserService {
         user.setPassword(DigestUtils.md5Hex(Config.get("user.password.salt") + password));
         user.setState(User.USERSTATE_UNACTIVE);
 
-        userDao.save(user);
+        userMapper.save(user);
 
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -89,7 +91,7 @@ public class UserService {
         thread.start();
     }
     public User findByEmail(String email) {
-        return userDao.findByEmail(email);
+        return userMapper.findByEmail(email);
     }
 
     /**
@@ -100,8 +102,8 @@ public class UserService {
      * @return
      */
     public User login(String userName, String password, String ip) {
-        User user = userDao.findByUserName(userName);
-        System.out.println(user);
+        User user = userMapper.findByUserName(userName);
+
         logger.info(user.getUserName());
         logger.info(user.getPassword());
         if(user != null&&(DigestUtils.md5Hex(Config.get("user.password.salt")+password).equals(user.getPassword()))){
@@ -134,12 +136,12 @@ public class UserService {
         if(userName==null){
             throw new ServiceException("token无效或已过期");
         } else {
-            User user = userDao.findByUserName(userName);
+            User user = userMapper.findByUserName(userName);
             if(user==null){
                 throw new ServiceException("无法找到对应的账号");
             }else {
                 user.setState(User.USERSTATE_ACTIVE);
-                userDao.update(user);
+                userMapper.update(user);
 
                 //将缓存中的键值对删除
                 cache.invalidate(token);
@@ -160,7 +162,7 @@ public class UserService {
             if("phone".equals(type)){
                 //TODO根据手机号码找回密码
             }else if("email".equals(type)){
-                User user = userDao.findByEmail(value);
+                User user = userMapper.findByEmail(value);
                 if(user!=null){
                     Thread thread = new Thread(new Runnable() {
                         @Override
@@ -188,7 +190,7 @@ public class UserService {
         if(StringUtils.isEmpty(username)){
             throw new ServiceException("token过期或错误");
         }else {
-            User user = userDao.findByUserName(username);
+            User user = userMapper.findByUserName(username);
             if(user==null){
                 throw new ServiceException("未找到对应账号");
             } else {
@@ -207,9 +209,9 @@ public class UserService {
         if(passwordCache.getIfPresent(token)==null){
             throw new ServiceException("token过期或错误");
         } else {
-            User user = userDao.findById(Integer.valueOf(id));
+            User user = userMapper.findById(Integer.valueOf(id));
             user.setPassword(DigestUtils.md5Hex(Config.get("user.password.salt")+password));
-            userDao.update(user);
+            userMapper.update(user);
             logger.info("{}重置了密码",user.getUserName());
         }
     }
@@ -221,7 +223,7 @@ public class UserService {
      */
     public void updateEmail(User user, String email) {
         user.setEmail(email);
-        userDao.update(user);
+        userMapper.update(user);
     }
 
     public void updatePassword(User user, String oldPassword, String newPassword) {
@@ -231,7 +233,7 @@ public class UserService {
             newPassword = DigestUtils.md5Hex(salt+newPassword);
             System.out.println(newPassword);
             user.setPassword(newPassword);
-            userDao.update(user);
+            userMapper.update(user);
         } else {
             throw new ServiceException("原始密码错误");
         }
@@ -239,7 +241,7 @@ public class UserService {
 
     public void updateAvatar(User user, String fileKey) {
         user.setAvatar(fileKey);
-        userDao.update(user);
+        userMapper.update(user);
     }
 
     /**
@@ -248,21 +250,21 @@ public class UserService {
      * @return
      */
     public List<Notify> findNotifyListByUser(User user) {
-        return notifyDao.findNotifyListByUser(user);
+        return notifyMapper.findNotifyListByUser(user);
     }
 
     public Integer findUnReadCount(User user) {
-        return notifyDao.findUnReadCount(user);
+        return notifyMapper.findUnReadCount(user);
     }
 
     public Page<UserVo> findUserList(Integer pageNo) {
-        Integer count = userDao.count();
+        Integer count = userMapper.count();
         Page<UserVo> page = new Page<>(count,pageNo);
-        List<User> userList = userDao.findAllUsers(page);
+        List<User> userList = userMapper.findAllUsers(page);
         List<UserVo> userVoList = new ArrayList<>();
 
         for(User user:userList){
-            UserVo userVo = userDao.findUserVo(user.getId());
+            UserVo userVo = userMapper.findUserVo(user.getId());
             userVoList.add(userVo);
         }
         page.setItems(userVoList);
@@ -271,9 +273,9 @@ public class UserService {
 
     public void updateUserState(String userId, Integer userState) {
         if(StringUtils.isNumeric(userId)){
-            User user = userDao.findById(Integer.valueOf(userId));
+            User user = userMapper.findById(Integer.valueOf(userId));
             user.setState(userState);
-            userDao.update(user);
+            userMapper.update(user);
         }else{
             throw new ServiceException("参数异常");
         }

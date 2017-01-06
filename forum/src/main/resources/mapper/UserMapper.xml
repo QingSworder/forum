@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kaishengit.mapper.UserMapper">
+
+    <insert id="save">
+        insert into t_user(userName,password,email,phone,avatar,state) values(#{userName},#{password},#{eamil},#{phone},#{avatar},#{state})
+    </insert>
+    <insert id="favTopic">
+        insert into t_fav(topicId,userId) values(#{topicId},#{userId})
+    </insert>
+    <update id="update">
+        update t_user set password =#{password},email=#{eamil},phone=#{phone},state=#{state},avatar=#{avatar} where id = #{id}
+    </update>
+    <delete id="unFavTopic">
+        delete from t_fav where userId = #{userId} and topicId = #{topicId}
+    </delete>
+
+    <select id="findByUserName" resultType="com.kaishengit.entity.User">
+        select * from t_user where userName = #{userName}
+    </select>
+    <select id="findByEmail" resultType="com.kaishengit.entity.User">
+        select * from t_user where email = #{email}
+    </select>
+    <select id="findById" resultType="com.kaishengit.entity.User">
+        select * from t_user where id = #{id}
+    </select>
+    <select id="findAllFavByUserId" resultType="java.util.List">
+        select * from t_fav where userId = #{userId}
+    </select>
+    <select id="count" resultType="java.lang.Integer">
+        select count(*) from t_user where state !=0 order by id
+    </select>
+    <select id="findAllUsers" resultType="com.kaishengit.entity.User">
+        select * from t_user where state !=0 order by createTime limit #{page.getStart()},#{page.getSize()}
+    </select>
+    <select id="findUserVo" resultType="com.kaishengit.vo.UserVo">
+        SELECT tll.login_time lastLoginTime,tll.ip loginIP,tu.id userId,tu.userName userName,tu.createTime ,tu.state userState
+        FROM t_login_log tll ,t_user tu
+        WHERE t_user_id = #{id  }
+        ORDER BY login_time
+        DESC LIMIT 0,1
+    </select>
+</mapper>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kaishengit.mapper.NotifyMapper">
+    <insert id="save">
+        insert into t_notify(userId,content,state) values(#{userId},#{content},#{state})
+    </insert>
+
+    <select id="findNotifyListByUser" resultType="com.kaishengit.entity.Notify">
+        select * from t_notify where userId = #{userId} order by readTime,createTime
+    </select>
+    <select id="readNotify">
+        update t_notify set state = 1,readTime = #{readTime} where id = #{id}
+    </select>
+    <select id="findUnReadCount" resultType="java.lang.Integer">
+        select count(*) from t_notify where state = 0 and userId = #{userId}
+    </select>
+</mapper>

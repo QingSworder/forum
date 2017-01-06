@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kaishengit.mapper.TopicMapper">
+
+    <insert id="saveNewTopic">
+        insert into t_topic(title,content,nodeId,userId) values(#{title},#{content},#{nodeId},#{userId})
+    </insert>
+    <update id="updateTopic">
+        update t_topic set title = #{title},content = #{content},clickNum = #{clickNum},favNum=#{favNum},
+        thankNum=#{thankNum},replyNum=#{replyNum},lastReplyTime=#{lastReplyTime},nodeId=#{nodeId},userId=#{userId} where id = #{id}
+    </update>
+    <delete id="deleteTopicById">
+        delete from t_topic where id = #{id}
+    </delete>
+    <select id="findTopicById" resultType="com.kaishengit.entity.Topic">
+        select * from t_topic where id = #{id};
+    </select>
+    <select id="count" resultType="java.lang.Integer">
+        select count(*) from t_topic
+    </select>
+    <select id="countByNodeId" resultType="java.lang.Integer">
+        select count(*) from t_topic where nodeId = #{nodeId}
+    </select>
+    <select id="findAll" parameterType="map" resultType="com.kaishengit.entity.Topic" resultMap="allMap">
+        select tu.userName,tu.avatar,tt.* from t_topic tt,t_user tu where tu.id = tt.userId
+            <if test="nodeId != null and nodeId != ''">
+                and nodeId = #{nodeId}
+            </if>
+        order by tt.lastReplyTime desc limit #{start},#{pageSize}
+
+    </select>
+    <select id="topicDayCount" resultType="java.lang.Integer">
+        select count(*) from (select count(*) from t_topic group by DATE_FORMAT(createTime,'%y-%m-%d')) AS topicCount
+    </select>
+    <select id="getDayTopicAndReplyNumList" resultType="com.kaishengit.entity.TopicReplyCount">
+        SELECT COUNT(*) topicNum,DATE_FORMAT(createTime,'%y-%m-%d') TIME,
+        (SELECT COUNT(*) FROM t_comment WHERE DATE_FORMAT(t_topic.createTime,'%y-%m-%d')) replyNum
+        FROM t_topic GROUP BY (DATE_FORMAT(createTime,'%y-%m-%d'))
+        ORDER BY (DATE_FORMAT(createTime,'%y-%m-%d')) DESC LIMIT #{start},#{pageSize}
+    </select>
+    <resultMap id="allMap" type="com.kaishengit.entity.Topic">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="createTime" property="createTime"/>
+        <result column="clickNum" property="clickNum"/>
+        <result column="favNum" property="favNum"/>
+        <result column="thankNum" property="thankNum"/>
+        <result column="replyNum" property="replyNum"/>
+        <result column="lastReplyTime" property="lastReplyTime"/>
+        <result column="userId" property="userId"/>
+        <result column="nodeId" property="nodeId"/>
+        <association property="user" column="userId" javaType="com.kaishengit.entity.User">
+            <result column="id" property="id"/>
+            <result column="userName" property="userName"/>
+            <result column="avatar" property="avatar"/>
+        </association>
+
+
+    </resultMap>
+</mapper>

@@ -69,7 +69,11 @@ public class UserDao {
     }
 
     public UserVo findUserVo(Integer id) {
-        String sql = "select max(tl.login_time) lastLoginTime,tl.ip loginIp,tu.id userId,tu.userName userName,tu.createTime,tu.state userState from t_login_log tl,t_user tu where tu.id = ?  ";
+        String sql = "SELECT tll.login_time lastLoginTime,tll.ip loginIP,tu.id userId,tu.userName userName,tu.createTime ,tu.state userState \n" +
+                "FROM t_login_log tll ,t_user tu \n" +
+                "WHERE t_user_id = ? \n" +
+                "ORDER BY login_time \n" +
+                "DESC LIMIT 0,1 ";
         return DbHelp.query(sql,new BeanHandler<>(UserVo.class),id);
     }
 }
