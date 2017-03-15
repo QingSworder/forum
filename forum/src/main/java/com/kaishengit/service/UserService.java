@@ -69,7 +69,7 @@ public class UserService {
         user.setAvatar(User.DEFAULT_AVATAR_NAME);
         user.setEmail(email);
         user.setPhone(phone);
-        user.setPassword(DigestUtils.md5Hex(Config.get("user.password.salt") + password));
+        user.setPassword(password);
         user.setState(User.USERSTATE_UNACTIVE);
 
         userMapper.save(user);
@@ -106,7 +106,7 @@ public class UserService {
 
         logger.info(user.getUserName());
         logger.info(user.getPassword());
-        if(user != null&&(DigestUtils.md5Hex(Config.get("user.password.salt")+password).equals(user.getPassword()))){
+        if(user != null&&(password.equals(user.getPassword()))){
             if(user.getState().equals(User.USERSTATE_ACTIVE)){
                 //记录登录日志
                 LoginLog log = new LoginLog();
